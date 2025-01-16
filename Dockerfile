@@ -1,14 +1,13 @@
-# Verwende ein Nginx-Basis-Image
+# Erste Phase: React-App bauen
+FROM node:18 AS build
+WORKDIR /app
+COPY package.json package-lock.json ./
+RUN npm install
+COPY . ./
+RUN npm run build
+
+# Zweite Phase: Statische Dateien mit Nginx bereitstellen
 FROM nginx:alpine
-
-# Entferne die Standard-Nginx-Inhalte
-RUN rm -rf /usr/share/nginx/html/*
-
-# Kopiere die gebauten React-Dateien in das Nginx-Verzeichnis
-COPY build/ /usr/share/nginx/html/
-
-# Exponiere den Standard-Port
+COPY --from=build /app/build /usr/share/nginx/html
 EXPOSE 80
-
-# Starte Nginx
 CMD ["nginx", "-g", "daemon off;"]
