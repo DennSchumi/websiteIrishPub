@@ -1,12 +1,26 @@
-# Erste Phase: React-App bauen
-FROM node:18 AS build
+# Phase 1: Build the Next.js app
+FROM node:18-alpine AS build
+WORKDIR /app
+
+# Install dependencies
 COPY package.json package-lock.json ./
-RUN npm install
+RUN npm install --frozen-lockfile
+
+# Build the application for production
 COPY . ./
 RUN npm run build
 
-# Zweite Phase: Statische Dateien mit Nginx bereitstellen
-FROM nginx:alpine
-COPY --from=build /app/build /usr/share/nginx/html
-EXPOSE 80
-CMD ["nginx", "-g", "daemon off;"]
+# Phase 2: Production environment
+FROM node:18-alpine AS production
+WORKDIR /app
+
+# Install only production dependencies
+COPY package.json package-lock.json ./
+RUN npm install --frozen-lockfile --production
+
+# Copy the build artifacts and application files
+COPY --from=build /app ./
+
+# Expose port for the Next.js production server
+EXPOSE 3000
+CMD ["npm", "run", "start"]
